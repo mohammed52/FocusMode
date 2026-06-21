@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">FocusMode</string>
+    <string name="focus_widget_description">Toggle Focus Mode on or off</string>
+</resources>
