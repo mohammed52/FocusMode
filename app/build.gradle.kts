@@ -8,7 +8,11 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.focusmode"
+        // Public/Play Store identity — deliberately decoupled from `namespace` below, which stays
+        // com.example.focusmode (matches every existing Kotlin `package` declaration). Renaming
+        // applicationId doesn't require renaming source packages; applicationId is just the
+        // unique, permanent-once-published app ID, unrelated to code structure.
+        applicationId = "com.mohammedpetiwala.masjidcallblock"
         minSdk = 29
         targetSdk = 35
         versionCode = 1
@@ -52,6 +56,8 @@ dependencies {
     implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation(platform("com.google.firebase:firebase-bom:34.15.0"))
+    implementation("com.google.firebase:firebase-analytics")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

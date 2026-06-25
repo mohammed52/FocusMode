@@ -7,11 +7,15 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- First-ever network permissions in this app, added solely for Firebase Analytics — see
+         Analytics.kt for the privacy boundary on what is/isn't ever sent off-device. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="Focus Mode"
+        android:label="Masjid Call Block"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FocusMode">
@@ -29,7 +33,7 @@
         <!-- Listens to all notifications so we can cancel non-allowed ones -->
         <service
             android:name=".NotificationBlockerService"
-            android:label="Focus Mode"
+            android:label="Masjid Call Block"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true">
             <intent-filter>

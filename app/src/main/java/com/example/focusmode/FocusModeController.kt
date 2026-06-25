@@ -51,5 +51,6 @@ object FocusModeController {
 
         FocusStatusNotifier.update(context, enabled)
         FocusGlanceWidget().updateAll(context)
+        Analytics.logFocusModeToggled(enabled)
     }
 }

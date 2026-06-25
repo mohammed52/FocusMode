@@ -22,6 +22,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val isEnabled: StateFlow<Boolean> = prefs.isEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val onboardingComplete: StateFlow<Boolean> = prefs.onboardingComplete
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val allowedContacts: StateFlow<List<Contact>> = prefs.allowedContacts
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -63,6 +66,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearLog() {
         viewModelScope.launch { prefs.clearLog() }
+    }
+
+    // Reads straight from DataStore rather than the blockLog StateFlow's cached value, since
+    // this is called right as the app launches from a tapped notification — the StateFlow may
+    // not have collected its first emission yet at that point.
+    suspend fun findLogEntry(contactKey: String): BlockedEvent? =
+        prefs.blockLog.first().firstOrNull { BlockedCallNotifier.contactKey(it) == contactKey }
+
+    fun completeOnboarding() {
+        viewModelScope.launch { prefs.setOnboardingComplete(true) }
+        Analytics.logOnboardingComplete()
     }
 
     fun loadDeviceContacts(context: Context) {

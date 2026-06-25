@@ -31,7 +31,7 @@ object FocusStatusNotifier {
         ensureChannel(nm)
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_focus_status)
-            .setContentTitle("Focus Mode is on")
+            .setContentTitle("Masjid Call Block is on")
             .setContentText("Blocking notifications & calls from anyone not on your allowed list")
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
@@ -45,9 +45,9 @@ object FocusStatusNotifier {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         if (nm.getNotificationChannel(CHANNEL_ID) != null) return
         val channel = NotificationChannel(
-            CHANNEL_ID, "Focus Mode status", NotificationManager.IMPORTANCE_LOW
+            CHANNEL_ID, "Masjid Call Block status", NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Shows an icon while Focus Mode is blocking notifications and calls"
+            description = "Shows an icon while Masjid Call Block is blocking notifications and calls"
             setBypassDnd(true)
             setShowBadge(false)
         }

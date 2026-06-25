@@ -10,22 +10,32 @@ import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.action.actionRunCallback
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
-import androidx.glance.layout.Box
+import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
+import androidx.glance.layout.width
 import androidx.glance.state.GlanceStateDefinition
+import androidx.glance.text.FontFamily
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import com.example.focusmode.PreferencesManager
+import com.example.focusmode.R
+import com.example.focusmode.ui.theme.BohraMaroon
+import com.example.focusmode.ui.theme.BohraSurfaceVariantDark
 
 class FocusGlanceWidget : GlanceAppWidget() {
     // We drive recomposition by collecting PreferencesManager's flow directly inside the
@@ -48,18 +58,27 @@ class FocusGlanceWidget : GlanceAppWidget() {
 
 @Composable
 private fun WidgetContent(enabled: Boolean) {
-    val backgroundColor = if (enabled) Color(0xFFB3261E) else Color(0xFF49454F)
-    Box(
+    val backgroundColor = if (enabled) BohraMaroon else BohraSurfaceVariantDark
+    Row(
         modifier = GlanceModifier
             .fillMaxSize()
             .padding(4.dp)
+            .cornerRadius(16.dp)
             .background(ColorProvider(day = backgroundColor, night = backgroundColor))
             .clickable(actionRunCallback<ToggleFocusModeAction>()),
-        contentAlignment = Alignment.Center
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        Image(
+            provider = ImageProvider(R.drawable.ic_widget_arch),
+            contentDescription = null,
+            modifier = GlanceModifier.size(12.dp)
+        )
+        Spacer(modifier = GlanceModifier.width(4.dp))
         Text(
             text = if (enabled) "ON" else "OFF",
             style = TextStyle(
+                fontFamily = FontFamily.Serif,
                 fontSize = 14.sp,
                 color = ColorProvider(day = Color.White, night = Color.White),
                 fontWeight = FontWeight.Bold,

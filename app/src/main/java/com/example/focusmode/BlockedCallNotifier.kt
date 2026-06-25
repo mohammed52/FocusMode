@@ -7,7 +7,9 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.ContactsContract
 import android.text.format.DateFormat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -28,6 +30,24 @@ object BlockedCallNotifier {
     // Identifies a notification "group" of one contact across channels (WhatsApp vs Phone calls
     // from the same person are tracked separately, since they're blocked by different services).
     fun contactKey(event: BlockedEvent): String = "${event.appName}|${event.from}"
+
+    // Real phone-call entries store the raw incoming number in `from` — this is a one-off lookup
+    // from a background service with no in-memory contacts list available (unlike the UI's
+    // CallBackAction.resolveDisplayName, which reuses MainViewModel's already-loaded
+    // deviceContacts), so it goes through PhoneLookup, the OS's own number-to-contact resolver.
+    private fun resolveDisplayName(context: Context, event: BlockedEvent): String {
+        if (event.appName != "Phone") return event.from
+        return try {
+            val uri = Uri.withAppendedPath(
+                ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(event.from)
+            )
+            context.contentResolver.query(
+                uri, arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME), null, null, null
+            )?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null } ?: event.from
+        } catch (e: Exception) {
+            event.from
+        }
+    }
 
     fun notify(context: Context, event: BlockedEvent, count: Int) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
@@ -65,7 +85,8 @@ object BlockedCallNotifier {
 
         val timeText = DateFormat.getTimeFormat(context).format(Date(event.timestamp))
         val timesWord = if (count == 1) "time" else "times"
-        val text = "${event.from} • blocked $count $timesWord • last at $timeText"
+        val displayName = resolveDisplayName(context, event)
+        val text = "$displayName • blocked $count $timesWord • last at $timeText"
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_focus_status)
@@ -95,7 +116,7 @@ object BlockedCallNotifier {
         val channel = NotificationChannel(
             CHANNEL_ID, "Blocked calls", NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
-            description = "One updating notification per contact Focus Mode repeatedly blocks"
+            description = "One updating notification per contact Masjid Call Block repeatedly blocks"
         }
         nm.createNotificationChannel(channel)
     }

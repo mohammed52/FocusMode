@@ -8,6 +8,6 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:textSize="10sp"
-        android:text="Focus" />
+        android:text="Masjid" />
 
 </FrameLayout>

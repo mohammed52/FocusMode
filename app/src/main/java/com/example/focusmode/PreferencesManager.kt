@@ -23,10 +23,19 @@ class PreferencesManager(private val context: Context) {
         val ALLOWED_CONTACTS = stringPreferencesKey("allowed_contacts")
         val BLOCK_LOG = stringPreferencesKey("block_log")
         val BLOCK_COUNTS = stringPreferencesKey("block_counts")
+        val ONBOARDING_COMPLETE = booleanPreferencesKey("onboarding_complete")
     }
 
     val isEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[IS_ENABLED] ?: false
+    }
+
+    val onboardingComplete: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[ONBOARDING_COMPLETE] ?: false
+    }
+
+    suspend fun setOnboardingComplete(completed: Boolean) {
+        context.dataStore.edit { prefs -> prefs[ONBOARDING_COMPLETE] = completed }
     }
 
     val allowedContacts: Flow<List<Contact>> = context.dataStore.data.map { prefs ->
@@ -54,6 +63,9 @@ class PreferencesManager(private val context: Context) {
             if (list.size > 100) list.removeAt(list.lastIndex)
             prefs[BLOCK_LOG] = gson.toJson(list)
         }
+        // Single chokepoint for all 3 call sites (real calls, WhatsApp calls, other notifications)
+        // — logs only event.type (a count), never event.from.
+        Analytics.logBlocked(event.type)
     }
 
     // Defensive against corrupted or schema-incompatible JSON (e.g. left over from a future
@@ -68,8 +80,14 @@ class PreferencesManager(private val context: Context) {
         }
     }
 
+    // Clearing the log also wipes the per-contact counters below — otherwise a contact's count
+    // would silently carry over a clear and resurface inflated (e.g. "blocked 4 times") the next
+    // time they're blocked, even though the visible log shows nothing before that point.
     suspend fun clearLog() {
-        context.dataStore.edit { prefs -> prefs[BLOCK_LOG] = "[]" }
+        context.dataStore.edit { prefs ->
+            prefs[BLOCK_LOG] = "[]"
+            prefs[BLOCK_COUNTS] = "{}"
+        }
     }
 
     // Per-contact "blocked since you last saw it" counter, keyed by "appName|from". Reset to

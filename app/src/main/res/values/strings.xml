@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">FocusMode</string>
-    <string name="focus_widget_description">Toggle Focus Mode on or off</string>
+    <string name="app_name">Masjid Call Block</string>
+    <string name="focus_widget_description">Toggle Masjid Call Block on or off</string>
 </resources>

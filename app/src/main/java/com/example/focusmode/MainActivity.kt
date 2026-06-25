@@ -47,6 +47,11 @@ class MainActivity : ComponentActivity() {
     // Activity instance is already running (onNewIntent) — Compose observes it to switch tabs.
     private val openLogTabTrigger = mutableIntStateOf(0)
 
+    // Plain var, not Compose state: it's always updated in the same synchronous call as
+    // openLogTabTrigger below, right before Compose gets a chance to recompose, so the
+    // recomposition triggered by that counter always sees this value already up to date.
+    private var pendingCallBackKey: String? = null
+
     companion object {
         const val EXTRA_OPEN_LOG_TAB = "open_log_tab"
         const val EXTRA_RESET_CONTACT_KEY = "reset_contact_key"
@@ -61,7 +66,10 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    FocusApp(openLogTabTrigger = openLogTabTrigger.intValue)
+                    FocusApp(
+                        openLogTabTrigger = openLogTabTrigger.intValue,
+                        pendingCallBackKey = pendingCallBackKey
+                    )
                 }
             }
         }
@@ -79,24 +87,32 @@ class MainActivity : ComponentActivity() {
         BlockedCallNotifier.cancelAll(applicationContext)
     }
 
-    // Tapping a blocked-call notification both opens the Log tab and resets that contact's
-    // running block count — the swipe-to-dismiss path resets the same count via
-    // BlockedCallDismissReceiver instead, since there's no Activity launch to hook into there.
+    // Tapping a blocked-call notification opens the Log tab, resets that contact's running block
+    // count, and (see FocusApp's LaunchedEffect(openLogTabTrigger)) launches the same call-back
+    // action a tap on that entry would trigger in-app. The swipe-to-dismiss path only resets the
+    // count, via BlockedCallDismissReceiver, since there's no Activity launch to hook into there.
     private fun handleNotificationIntent(intent: Intent?) {
         if (intent?.getBooleanExtra(EXTRA_OPEN_LOG_TAB, false) == true) {
             openLogTabTrigger.intValue++
         }
         intent?.getStringExtra(EXTRA_RESET_CONTACT_KEY)?.let { key ->
             lifecycleScope.launch { PreferencesManager(applicationContext).resetBlockCount(key) }
+            pendingCallBackKey = key
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FocusApp(openLogTabTrigger: Int = 0) {
+fun FocusApp(openLogTabTrigger: Int = 0, pendingCallBackKey: String? = null) {
     val context = LocalContext.current
     val vm: MainViewModel = viewModel()
+
+    val onboardingComplete by vm.onboardingComplete.collectAsState()
+    if (!onboardingComplete) {
+        OnboardingScreen(onFinish = { vm.completeOnboarding() })
+        return
+    }
 
     val isEnabled by vm.isEnabled.collectAsState()
     val allowedContacts by vm.allowedContacts.collectAsState()
@@ -105,10 +121,17 @@ fun FocusApp(openLogTabTrigger: Int = 0) {
 
     var selectedTab by remember { mutableIntStateOf(0) }
     LaunchedEffect(openLogTabTrigger) {
-        if (openLogTabTrigger > 0) selectedTab = 1
+        if (openLogTabTrigger > 0) {
+            selectedTab = 1
+            pendingCallBackKey?.let { key ->
+                vm.findLogEntry(key)?.let { event ->
+                    launchCallBackAction(context, resolveCallBackAction(event, deviceContacts))
+                }
+            }
+        }
     }
     var showContactPicker by remember { mutableStateOf(false) }
-    var showPermissionsDialog by remember { mutableStateOf(false) }
+    var showPermissionsFlow by remember { mutableStateOf(false) }
 
     // Increment this whenever we resume so permissions are re-evaluated
     var permRefreshKey by remember { mutableIntStateOf(0) }
@@ -133,34 +156,12 @@ fun FocusApp(openLogTabTrigger: Int = 0) {
         (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
             .isNotificationPolicyAccessGranted
     }
-    // Optional: lets DND be restored the instant an allowed call ends instead of relying solely
-    // on the backstop timer, so it doesn't block allPermsGranted like the four core grants do.
-    val hasPhoneState = remember(permRefreshKey) {
-        ContextCompat.checkSelfPermission(
-            context, Manifest.permission.READ_PHONE_STATE
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-    // Optional: needed to show the status-bar icon while Focus Mode is on. Pre-Tiramisu this
-    // permission doesn't require a runtime grant, so checkSelfPermission reports it as granted.
-    val hasPostNotifications = remember(permRefreshKey) {
-        ContextCompat.checkSelfPermission(
-            context, Manifest.permission.POST_NOTIFICATIONS
-        ) == PackageManager.PERMISSION_GRANTED
-    }
 
     val allPermsGranted = hasContacts && hasNotificationListener && hasCallScreening && hasDnd
 
     val contactsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> if (granted) vm.loadDeviceContacts(context) }
-
-    val phoneStateLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { }
-
-    val postNotificationsLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { }
 
     val roleActivityLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -170,15 +171,39 @@ fun FocusApp(openLogTabTrigger: Int = 0) {
         if (hasContacts) vm.loadDeviceContacts(context)
     }
 
-    // Show permissions dialog at startup if anything is missing
+    // Show the permissions flow at startup if anything is missing
     LaunchedEffect(allPermsGranted) {
-        if (!allPermsGranted) showPermissionsDialog = true
+        if (!allPermsGranted) showPermissionsFlow = true
     }
 
+    if (showPermissionsFlow) {
+        PermissionsFlowScreen(
+            steps = buildPermissionSteps(
+                hasContacts = hasContacts,
+                hasNotificationListener = hasNotificationListener,
+                hasCallScreening = hasCallScreening,
+                hasDnd = hasDnd,
+                onContacts = { contactsLauncher.launch(Manifest.permission.READ_CONTACTS) },
+                onNotificationListener = {
+                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                },
+                onCallScreening = {
+                    val rm = context.getSystemService(Context.ROLE_SERVICE) as RoleManager
+                    roleActivityLauncher.launch(
+                        rm.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
+                    )
+                },
+                onDnd = {
+                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+                }
+            ),
+            onDone = { showPermissionsFlow = false }
+        )
+    } else {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Focus Mode", fontWeight = FontWeight.Bold) },
+                title = { Text("Masjid Call Block", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -211,7 +236,7 @@ fun FocusApp(openLogTabTrigger: Int = 0) {
                 ) {
                     Column {
                         Text(
-                            text = if (isEnabled) "Focus Mode ON" else "Focus Mode OFF",
+                            text = if (isEnabled) "Masjid Call Block ON" else "Masjid Call Block OFF",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
@@ -228,7 +253,7 @@ fun FocusApp(openLogTabTrigger: Int = 0) {
                         checked = isEnabled,
                         onCheckedChange = {
                             if (!allPermsGranted && !isEnabled) {
-                                showPermissionsDialog = true
+                                showPermissionsFlow = true
                             } else {
                                 vm.toggleEnabled()
                             }
@@ -243,7 +268,7 @@ fun FocusApp(openLogTabTrigger: Int = 0) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp)
-                        .clickable { showPermissionsDialog = true },
+                        .clickable { showPermissionsFlow = true },
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.tertiaryContainer
                     )
@@ -275,9 +300,10 @@ fun FocusApp(openLogTabTrigger: Int = 0) {
                     onAdd = { showContactPicker = true },
                     onRemove = { vm.removeContact(it) }
                 )
-                1 -> LogTab(log = blockLog, onClear = { vm.clearLog() })
+                1 -> LogTab(log = blockLog, deviceContacts = deviceContacts, onClear = { vm.clearLog() })
             }
         }
+    }
     }
 
     // Contact picker dialog
@@ -289,36 +315,6 @@ fun FocusApp(openLogTabTrigger: Int = 0) {
             onSelect = { vm.addContact(it); showContactPicker = false },
             onDismiss = { showContactPicker = false },
             onRequestPermission = { contactsLauncher.launch(Manifest.permission.READ_CONTACTS) }
-        )
-    }
-
-    // Permissions dialog
-    if (showPermissionsDialog) {
-        PermissionsDialog(
-            hasContacts = hasContacts,
-            hasNotificationListener = hasNotificationListener,
-            hasCallScreening = hasCallScreening,
-            hasDnd = hasDnd,
-            hasPhoneState = hasPhoneState,
-            hasPostNotifications = hasPostNotifications,
-            onContacts = { contactsLauncher.launch(Manifest.permission.READ_CONTACTS) },
-            onNotificationListener = {
-                context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-            },
-            onCallScreening = {
-                val rm = context.getSystemService(Context.ROLE_SERVICE) as RoleManager
-                roleActivityLauncher.launch(
-                    rm.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
-                )
-            },
-            onDnd = {
-                context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
-            },
-            onPhoneState = { phoneStateLauncher.launch(Manifest.permission.READ_PHONE_STATE) },
-            onPostNotifications = {
-                postNotificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            },
-            onDismiss = { showPermissionsDialog = false }
         )
     }
 }
@@ -409,8 +405,9 @@ private data class GroupedBlock(val latest: BlockedEvent, val count: Int)
 
 // Log tab
 @Composable
-fun LogTab(log: List<BlockedEvent>, onClear: () -> Unit) {
+fun LogTab(log: List<BlockedEvent>, deviceContacts: List<Contact>, onClear: () -> Unit) {
     val fmt = remember { SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()) }
+    val context = LocalContext.current
 
     if (log.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -448,8 +445,16 @@ fun LogTab(log: List<BlockedEvent>, onClear: () -> Unit) {
             ) {
                 items(grouped, key = { BlockedCallNotifier.contactKey(it.latest) }) { group ->
                     val event = group.latest
+                    val displayName = resolveDisplayName(event, deviceContacts)
+                    val callBackAction = resolveCallBackAction(event, deviceContacts)
                     Card(
-                        Modifier.fillMaxWidth(),
+                        if (callBackAction != CallBackAction.None) {
+                            Modifier.fillMaxWidth().clickable {
+                                launchCallBackAction(context, callBackAction)
+                            }
+                        } else {
+                            Modifier.fillMaxWidth()
+                        },
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
@@ -467,7 +472,7 @@ fun LogTab(log: List<BlockedEvent>, onClear: () -> Unit) {
                             )
                             Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("${event.from} (${group.count})", fontWeight = FontWeight.Medium,
+                                Text("$displayName (${group.count})", fontWeight = FontWeight.Medium,
                                     maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 val sourceLabel = if (event.type == "call") {
                                     "${event.appName} call"
@@ -478,6 +483,15 @@ fun LogTab(log: List<BlockedEvent>, onClear: () -> Unit) {
                                     "$sourceLabel • last at ${fmt.format(Date(event.timestamp))}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            if (callBackAction != CallBackAction.None) {
+                                Spacer(Modifier.width(8.dp))
+                                Icon(
+                                    Icons.Default.Call,
+                                    contentDescription = "Call back",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
@@ -551,70 +565,6 @@ fun ContactPickerDialog(
         confirmButton = {},
         dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } }
     )
-}
-
-// Permissions dialog
-@Composable
-fun PermissionsDialog(
-    hasContacts: Boolean,
-    hasNotificationListener: Boolean,
-    hasCallScreening: Boolean,
-    hasDnd: Boolean,
-    hasPhoneState: Boolean,
-    hasPostNotifications: Boolean,
-    onContacts: () -> Unit,
-    onNotificationListener: () -> Unit,
-    onCallScreening: () -> Unit,
-    onDnd: () -> Unit,
-    onPhoneState: () -> Unit,
-    onPostNotifications: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Setup Required") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("Focus Mode needs the following permissions:")
-                PermRow("Read Contacts", "Identify callers from your contacts",
-                    hasContacts, onContacts)
-                PermRow("Notification Access", "Block notifications from all apps",
-                    hasNotificationListener, onNotificationListener)
-                PermRow("Call Screening", "Block calls from unknown numbers",
-                    hasCallScreening, onCallScreening)
-                PermRow("Do Not Disturb Access", "Silence sounds immediately when Focus Mode is ON",
-                    hasDnd, onDnd)
-                PermRow("Call Sync (optional)",
-                    "Restore Do Not Disturb the instant an allowed call ends",
-                    hasPhoneState, onPhoneState)
-                PermRow("Status Icon (optional)",
-                    "Show an icon in the notification shade while Focus Mode is on",
-                    hasPostNotifications, onPostNotifications)
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } }
-    )
-}
-
-@Composable
-fun PermRow(label: String, desc: String, granted: Boolean, onGrant: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            if (granted) Icons.Default.CheckCircle else Icons.Default.Cancel,
-            null,
-            tint = if (granted) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(Modifier.width(10.dp))
-        Column(Modifier.weight(1f)) {
-            Text(label, fontWeight = FontWeight.Medium)
-            Text(desc, style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        if (!granted) {
-            TextButton(onClick = onGrant) { Text("Grant") }
-        }
-    }
 }
 
 // Helpers
