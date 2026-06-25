@@ -158,6 +158,14 @@ private fun WelcomePage() {
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            "Have a suggestion or feature idea? Tap the chat icon at the top of the main " +
+                "screen anytime to message us on WhatsApp.",
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
