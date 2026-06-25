@@ -14,3 +14,12 @@
 .cxx
 local.properties
 .claude/settings.local.json
+
+# Release signing — never commit the keystore or its passwords.
+keystore.properties
+*.jks
+*.keystore
+
+# Firebase config — not a traditional secret (scoped by package name + SHA-1), but kept local
+# since this repo is public; copy from the Firebase Console after registering the app.
+app/google-services.json

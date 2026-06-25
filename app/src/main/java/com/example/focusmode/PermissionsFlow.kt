@@ -70,7 +70,8 @@ fun buildPermissionSteps(
     PermissionStep(
         icon = Icons.Default.NotificationsActive,
         title = "Turn on Notification Access",
-        description = "This lets Masjid Call Block silence notifications from other apps while it's on.",
+        description = "This lets Masjid Call Block silence notifications from other apps while " +
+            "it's on. It works entirely on your phone — nothing is read, stored, or sent anywhere.",
         hint = "Find \"Masjid Call Block\" in the list and turn it on, then come back here.",
         buttonLabel = "Open Notification Settings",
         granted = hasNotificationListener,

@@ -38,7 +38,29 @@ gradlew.bat test --tests "com.example.focusmode.ExampleUnitTest.addition_isCorre
 gradlew.bat connectedAndroidTest        # run instrumented tests (app/src/androidTest) — needs a connected device/emulator
 gradlew.bat lint                        # Android lint
 gradlew.bat clean
+gradlew.bat bundleRelease                # build signed release .aab for Play Store upload
 ```
+
+## Release & distribution
+
+- The repo is public on GitHub; the published `applicationId` is
+  `com.mohammedpetiwala.masjidcallblock` (`namespace`/source packages stay `com.example.focusmode`
+  — see the Gotchas section, this split is intentional).
+- Release signing reads `keystore.properties` (repo root, gitignored — never commit it or
+  `app/upload-keystore.jks`) via the `Properties()` block at the top of `app/build.gradle.kts`. If
+  that file is missing (e.g. a fresh clone), `signingConfigs`/`buildTypes.release.signingConfig`
+  are skipped entirely rather than failing the build, so `assembleDebug` and Gradle sync still work
+  without it — only `bundleRelease`/a real release build needs it.
+- Firebase Analytics (`Analytics.kt`) requires `app/google-services.json` (gitignored, not in this
+  repo — copy it from the Firebase Console after registering the app under the applicationId
+  above) and the `com.google.gms.google-services` plugin actually applied in `app/build.gradle.kts`
+  (registered with `apply false` in the root `build.gradle.kts` until both exist). Until then,
+  every `Analytics.kt` call silently no-ops (`safeLog` swallows the "FirebaseApp not initialized"
+  exception) rather than crashing.
+- Privacy policy lives at `docs/index.html`, served via GitHub Pages at
+  `https://mohammed52.github.io/FocusMode/` — required for the Play Store listing given the
+  contacts/call/notification access plus analytics. Keep it in sync with `Analytics.kt`'s actual
+  event list if that ever changes.
 
 ## Architecture
 
