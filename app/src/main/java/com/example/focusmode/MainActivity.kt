@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -59,6 +60,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SupportContact.init()
         handleNotificationIntent(intent)
         setContent {
             FocusModeTheme {
@@ -204,6 +206,14 @@ fun FocusApp(openLogTabTrigger: Int = 0, pendingCallBackKey: String? = null) {
         topBar = {
             TopAppBar(
                 title = { Text("Masjid Call Block", fontWeight = FontWeight.Bold) },
+                actions = {
+                    IconButton(onClick = { SupportContact.openWhatsAppChat(context) }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Chat,
+                            contentDescription = "Suggestions & feedback on WhatsApp"
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
