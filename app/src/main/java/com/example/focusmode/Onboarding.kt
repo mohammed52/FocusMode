@@ -293,7 +293,7 @@ private fun WidgetPreviewChip(label: String, color: Color) {
 
 // Returns whether the launcher accepted the pin request — false means we fell back to
 // instructing the user to add the widget manually via the launcher's widget picker.
-private fun requestPinFocusWidget(context: Context): Boolean {
+fun requestPinFocusWidget(context: Context): Boolean {
     val appWidgetManager = context.getSystemService(AppWidgetManager::class.java) ?: return false
     if (!appWidgetManager.isRequestPinAppWidgetSupported) return false
     val provider = ComponentName(context, FocusGlanceWidgetReceiver::class.java)

@@ -213,6 +213,9 @@ fun FocusApp(openLogTabTrigger: Int = 0, pendingCallBackKey: String? = null) {
             TopAppBar(
                 title = { Text("Masjid Call Block", fontWeight = FontWeight.Bold) },
                 actions = {
+                    IconButton(onClick = { requestPinFocusWidget(context) }) {
+                        Icon(Icons.Default.Widgets, contentDescription = "Add widget to Home screen")
+                    }
                     IconButton(onClick = { SupportContact.openWhatsAppChat(context) }) {
                         Icon(
                             Icons.AutoMirrored.Filled.Chat,
