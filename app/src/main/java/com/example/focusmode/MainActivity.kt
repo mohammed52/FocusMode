@@ -1,6 +1,7 @@
 package com.example.focusmode
 
 import android.Manifest
+import android.app.Activity
 import android.app.NotificationManager
 import android.app.role.RoleManager
 import android.content.Context
@@ -31,7 +32,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.NotificationManagerCompat
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -61,6 +66,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         SupportContact.init()
+        Ads.init(applicationContext)
         handleNotificationIntent(intent)
         setContent {
             FocusModeTheme {
@@ -419,8 +425,13 @@ fun LogTab(log: List<BlockedEvent>, deviceContacts: List<Contact>, onClear: () -
     val fmt = remember { SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()) }
     val context = LocalContext.current
 
+    // Preloaded here (not at app start) so it's only ever fetched while the user is actually on
+    // the one screen that can show it — see Ads.kt for why this is a no-op unless ads_enabled.
+    LaunchedEffect(Unit) { Ads.preloadInterstitial(context) }
+
+    Column(Modifier.fillMaxSize()) {
     if (log.isEmpty()) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Default.NotificationsOff, null,
                     Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -437,7 +448,7 @@ fun LogTab(log: List<BlockedEvent>, deviceContacts: List<Contact>, onClear: () -
                 .map { (_, events) -> GroupedBlock(events.first(), events.size) }
         }
 
-        Column(Modifier.fillMaxSize()) {
+        Column(Modifier.weight(1f)) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -447,7 +458,9 @@ fun LogTab(log: List<BlockedEvent>, deviceContacts: List<Contact>, onClear: () -
             ) {
                 Text("${grouped.size} contacts • ${log.size} blocked",
                     style = MaterialTheme.typography.titleSmall)
-                TextButton(onClick = onClear) { Text("Clear All") }
+                TextButton(onClick = {
+                    Ads.showInterstitialThen(context as Activity, onClear)
+                }) { Text("Clear All") }
             }
             LazyColumn(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
@@ -510,6 +523,24 @@ fun LogTab(log: List<BlockedEvent>, deviceContacts: List<Contact>, onClear: () -
             }
         }
     }
+    if (Ads.isEnabled()) {
+        BannerAdView(modifier = Modifier.fillMaxWidth())
+    }
+    }
+}
+
+@Composable
+fun BannerAdView(modifier: Modifier = Modifier) {
+    AndroidView(
+        modifier = modifier,
+        factory = { context ->
+            AdView(context).apply {
+                setAdSize(AdSize.BANNER)
+                adUnitId = Ads.bannerUnitId()
+                loadAd(AdRequest.Builder().build())
+            }
+        }
+    )
 }
 
 // Contact picker dialog
