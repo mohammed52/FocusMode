@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -35,7 +34,8 @@ import androidx.glance.text.TextStyle
 import com.example.focusmode.PreferencesManager
 import com.example.focusmode.R
 import com.example.focusmode.ui.theme.BohraGold
-import com.example.focusmode.ui.theme.BohraSurfaceVariantDark
+import com.example.focusmode.ui.theme.BohraIvory
+import com.example.focusmode.ui.theme.BohraMaroon
 
 class FocusGlanceWidget : GlanceAppWidget() {
     // We drive recomposition by collecting PreferencesManager's flow directly inside the
@@ -58,11 +58,11 @@ class FocusGlanceWidget : GlanceAppWidget() {
 
 @Composable
 private fun WidgetContent(enabled: Boolean) {
-    // ON: vibrant gold — the brand's "active/premium" signal; dark text/arch for contrast.
-    // OFF: dark muted brown — recedes visually so it reads as inactive.
-    val backgroundColor = if (enabled) BohraGold else BohraSurfaceVariantDark
+    // ON: deep maroon — bold red reads as active/alert; gold arch and ivory text for contrast.
+    // OFF: gold — warm and visible without being harsh; maroon arch and text for contrast.
+    val backgroundColor = if (enabled) BohraMaroon else BohraGold
     val archRes = if (enabled) R.drawable.ic_widget_arch_on else R.drawable.ic_widget_arch
-    val textColor = if (enabled) Color(0xFF0D2E22) else Color.White
+    val textColor = if (enabled) BohraIvory else BohraMaroon
     Row(
         modifier = GlanceModifier
             .fillMaxSize()
