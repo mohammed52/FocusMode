@@ -34,7 +34,7 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import com.example.focusmode.PreferencesManager
 import com.example.focusmode.R
-import com.example.focusmode.ui.theme.BohraMaroon
+import com.example.focusmode.ui.theme.BohraGold
 import com.example.focusmode.ui.theme.BohraSurfaceVariantDark
 
 class FocusGlanceWidget : GlanceAppWidget() {
@@ -58,7 +58,11 @@ class FocusGlanceWidget : GlanceAppWidget() {
 
 @Composable
 private fun WidgetContent(enabled: Boolean) {
-    val backgroundColor = if (enabled) BohraMaroon else BohraSurfaceVariantDark
+    // ON: vibrant gold — the brand's "active/premium" signal; dark text/arch for contrast.
+    // OFF: dark muted brown — recedes visually so it reads as inactive.
+    val backgroundColor = if (enabled) BohraGold else BohraSurfaceVariantDark
+    val archRes = if (enabled) R.drawable.ic_widget_arch_on else R.drawable.ic_widget_arch
+    val textColor = if (enabled) Color(0xFF0D2E22) else Color.White
     Row(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -70,17 +74,17 @@ private fun WidgetContent(enabled: Boolean) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            provider = ImageProvider(R.drawable.ic_widget_arch),
+            provider = ImageProvider(archRes),
             contentDescription = null,
-            modifier = GlanceModifier.size(12.dp)
+            modifier = GlanceModifier.size(20.dp)
         )
-        Spacer(modifier = GlanceModifier.width(4.dp))
+        Spacer(modifier = GlanceModifier.width(5.dp))
         Text(
             text = if (enabled) "ON" else "OFF",
             style = TextStyle(
                 fontFamily = FontFamily.Serif,
-                fontSize = 14.sp,
-                color = ColorProvider(day = Color.White, night = Color.White),
+                fontSize = 16.sp,
+                color = ColorProvider(day = textColor, night = textColor),
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )

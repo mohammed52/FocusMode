@@ -1,19 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A mihrab-style niche: the same pointed-arch silhouette as ui/theme/Shapes.kt's ArchShape,
-     drawn twice (gold frame, emerald recess) so it reads as an architectural niche rather than a
-     flat blob. Both arches stay within the 66dp adaptive-icon safe zone (circle of radius 33
-     centered at 54,54) so no launcher mask shape clips them. The monochrome themed-icon variant
-     reuses this same drawable — both paths are fully opaque, so the system's flat tint just
-     collapses them into one solid arch silhouette, which still reads cleanly. -->
+<!-- Mihrab arch with crescent moon and star inside the recess.
+     All elements stay within the 66dp adaptive-icon safe zone (radius 33, centered at 54,54).
+     Crescent is painted as an ivory circle with an emerald cover circle layered on top — no
+     fillType="evenOdd" needed, the cover just matches the recess background exactly.
+     Monochrome themed-icon variant: all opaque paths collapse to one solid tinted silhouette,
+     still reads as an arch shape. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- Gold mihrab frame -->
     <path
         android:fillColor="#C9962C"
         android:pathData="M32,74 L76,74 L76,47.3 Q76,33.5 54,28 Q32,33.5 32,47.3 Z" />
+
+    <!-- Emerald recess -->
     <path
         android:fillColor="#123F31"
         android:pathData="M40,66 L68,66 L68,48.6 Q68,39.6 54,36 Q40,39.6 40,48.6 Z" />
+
+    <!-- Crescent moon: ivory base circle -->
+    <path
+        android:fillColor="#F0E6CE"
+        android:pathData="M45,53 A9,9 0 1 1 63,53 A9,9 0 1 1 45,53 Z" />
+
+    <!-- Crescent moon: emerald cover circle offset right, reveals left-facing crescent -->
+    <path
+        android:fillColor="#123F31"
+        android:pathData="M49.5,53 A8.5,8.5 0 1 1 66.5,53 A8.5,8.5 0 1 1 49.5,53 Z" />
+
+    <!-- Gold 4-point star near the arch apex -->
+    <path
+        android:fillColor="#C9962C"
+        android:pathData="M54,39 L55.3,41.2 L57.8,42 L55.3,42.8 L54,45 L52.7,42.8 L50.2,42 L52.7,41.2 Z" />
+
 </vector>
