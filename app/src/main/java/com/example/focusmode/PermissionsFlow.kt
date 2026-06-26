@@ -4,12 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PhoneForwarded
 import androidx.compose.material.icons.filled.CheckCircle
@@ -32,12 +34,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.focusmode.ui.theme.ArchShape
 
-// One required permission, in plain language, with a concrete hint for what to do on the
-// system screen the action button sends the user to. Deliberately only the 4 permissions that
-// the blocking engine actually needs to function — the 2 optional ones (READ_PHONE_STATE for
-// instant DND restore, POST_NOTIFICATIONS for the status icon) are left out of this flow
-// entirely: both degrade gracefully on their own, and for a non-technical family audience,
-// fewer required taps to get the core feature working matters more than those nice-to-haves.
 data class PermissionStep(
     val icon: ImageVector,
     val title: String,
@@ -61,7 +57,7 @@ fun buildPermissionSteps(
     PermissionStep(
         icon = Icons.Default.Contacts,
         title = "Allow access to Contacts",
-        description = "So Masjid Call Block can recognize your family and let them through.",
+        description = "So Masjid Call Block can recognise your family and let them through.",
         hint = "Tap \"Allow\" on the prompt that appears.",
         buttonLabel = "Allow Contacts Access",
         granted = hasContacts,
@@ -70,8 +66,8 @@ fun buildPermissionSteps(
     PermissionStep(
         icon = Icons.Default.NotificationsActive,
         title = "Turn on Notification Access",
-        description = "This lets Masjid Call Block silence notifications from other apps while " +
-            "it's on. It works entirely on your phone — nothing is read, stored, or sent anywhere.",
+        description = "So it can silence notifications from other apps. Nothing is ever read " +
+            "or shared — everything stays on your phone.",
         hint = "Find \"Masjid Call Block\" in the list and turn it on, then come back here.",
         buttonLabel = "Open Notification Settings",
         granted = hasNotificationListener,
@@ -79,8 +75,8 @@ fun buildPermissionSteps(
     ),
     PermissionStep(
         icon = Icons.AutoMirrored.Filled.PhoneForwarded,
-        title = "Set Masjid Call Block to screen calls",
-        description = "This lets it silence calls from numbers that aren't on your allowed list.",
+        title = "Screen incoming calls",
+        description = "So it can silence calls from numbers that aren't on your allowed list.",
         hint = "Tap \"Masjid Call Block\" on the next screen to confirm.",
         buttonLabel = "Open Call Screening Settings",
         granted = hasCallScreening,
@@ -132,12 +128,22 @@ private fun PermissionStepContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            "Step $stepNumber of $totalSteps",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Bold
-        )
+        Row(horizontalArrangement = Arrangement.Center) {
+            repeat(totalSteps) { index ->
+                val isCurrent = index == stepNumber - 1
+                val isDone = index < stepNumber - 1
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .size(if (isCurrent) 10.dp else 8.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isCurrent || isDone) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                )
+            }
+        }
         Spacer(Modifier.height(24.dp))
         Box(
             modifier = Modifier
@@ -166,23 +172,23 @@ private fun PermissionStepContent(
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(Modifier.height(32.dp))
-        Button(
-            onClick = step.onAction,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(step.buttonLabel)
-        }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
         Text(
             step.hint,
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(24.dp))
+        Button(
+            onClick = step.onAction,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(step.buttonLabel)
+        }
+        Spacer(Modifier.height(16.dp))
         TextButton(onClick = onFinishLater) {
-            Text("Finish later")
+            Text("Skip for now — app won't work yet")
         }
     }
 }
@@ -220,6 +226,13 @@ private fun AllSetStep(onDone: () -> Unit) {
         Text(
             "Masjid Call Block is ready. Turn it on before you head in, and your family can still reach you.",
             style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            "Have a suggestion or feature idea? Tap the chat icon at the top of the main screen anytime to message us on WhatsApp.",
+            style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

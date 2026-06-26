@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.Activity
 import android.app.NotificationManager
 import android.app.role.RoleManager
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -44,6 +46,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.focusmode.ui.theme.FocusModeTheme
+import com.example.focusmode.widget.FocusGlanceWidgetReceiver
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -164,6 +167,11 @@ fun FocusApp(openLogTabTrigger: Int = 0, pendingCallBackKey: String? = null) {
         (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
             .isNotificationPolicyAccessGranted
     }
+    val hasWidget = remember(permRefreshKey) {
+        AppWidgetManager.getInstance(context)
+            .getAppWidgetIds(ComponentName(context, FocusGlanceWidgetReceiver::class.java))
+            .isNotEmpty()
+    }
 
     val allPermsGranted = hasContacts && hasNotificationListener && hasCallScreening && hasDnd
 
@@ -213,9 +221,6 @@ fun FocusApp(openLogTabTrigger: Int = 0, pendingCallBackKey: String? = null) {
             TopAppBar(
                 title = { Text("Masjid Call Block", fontWeight = FontWeight.Bold) },
                 actions = {
-                    IconButton(onClick = { requestPinFocusWidget(context) }) {
-                        Icon(Icons.Default.Widgets, contentDescription = "Add widget to Home screen")
-                    }
                     IconButton(onClick = { SupportContact.openWhatsAppChat(context) }) {
                         Icon(
                             Icons.AutoMirrored.Filled.Chat,
@@ -278,6 +283,44 @@ fun FocusApp(openLogTabTrigger: Int = 0, pendingCallBackKey: String? = null) {
                             }
                         }
                     )
+                }
+            }
+
+            // Widget suggestion card — disappears once the widget is placed
+            if (!hasWidget) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Widgets,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            "Add the widget to your home screen for quick access",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Button(
+                            onClick = { requestPinFocusWidget(context) },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text("Add", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
                 }
             }
 
@@ -612,6 +655,13 @@ fun ContactPickerDialog(
 }
 
 // Helpers
+fun requestPinFocusWidget(context: Context): Boolean {
+    val appWidgetManager = AppWidgetManager.getInstance(context)
+    if (!appWidgetManager.isRequestPinAppWidgetSupported) return false
+    val provider = ComponentName(context, FocusGlanceWidgetReceiver::class.java)
+    return appWidgetManager.requestPinAppWidget(provider, null, null)
+}
+
 fun isNotificationListenerEnabled(context: Context): Boolean {
     return NotificationManagerCompat.getEnabledListenerPackages(context)
         .contains(context.packageName)
