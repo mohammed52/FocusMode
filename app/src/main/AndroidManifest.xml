@@ -20,6 +20,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FocusMode">
 
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-8587355695080950~6424434977" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
