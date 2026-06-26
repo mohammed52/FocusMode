@@ -136,8 +136,9 @@ private fun OnboardingPageScaffold(
 private fun WelcomePage() {
     OnboardingPageScaffold(icon = Icons.Default.DoNotDisturbOn, title = "Welcome to Masjid Call Block") {
         Text(
-            "Silence your phone for waaz or majlis without going completely dark. Masjid Call " +
-                "Block keeps everyone else quiet while the family you choose can still reach you.",
+            "Visiting the masjid with family or friends? Silence your phone without going " +
+                "completely dark. Masjid Call Block keeps everyone else quiet while the people " +
+                "you choose can still reach you.",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant

@@ -10,8 +10,8 @@ single-module Android app (Kotlin + Jetpack Compose / Material3) that silences n
 phone calls from anyone not on an "allowed contacts" list while a toggle is on. There is no
 remote backend — all state is local to the device.
 
-It exists for one specific moment: a family at masjid for waaz/majlis, phones on silent so they
-don't disturb anyone around them, and a spouse or parent calling near the end to coordinate
+It exists for one specific moment: a family or friends visiting the masjid, phones on silent so
+they don't disturb anyone around them, and a spouse or parent calling near the end to coordinate
 leaving — a call a fully-silenced phone would otherwise miss entirely. The app's whole point is
 that allowed contacts can always get through while everyone/everything else stays silent. Use
 that as the bar for any change: does it help the people on the allowed list actually reach this

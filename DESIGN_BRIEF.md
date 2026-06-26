@@ -11,10 +11,10 @@ only user-facing text was rebranded) is an Android app (Kotlin + Jetpack Compose
 While a single toggle is ON, it silences **all** notifications and phone calls except from
 contacts the user has explicitly allowed.
 
-It was built for one specific moment: a family at masjid for waaz/majlis, phones on silent, and
-a spouse or parent calling near the end to coordinate leaving — a call a fully-silenced phone
+It was built for one specific moment: a family or friends visiting the masjid, phones on silent,
+and a spouse or parent calling near the end to coordinate leaving — a call a fully-silenced phone
 would otherwise miss. That's worth keeping in mind for tone: this is a calm, respectful,
-single-purpose tool for a religious-gathering context, not a generic "productivity/focus" app.
+single-purpose tool for a masjid visit, not a generic "productivity/focus" app.
 
 Almost everything stays local to the device — no accounts, no app-data backend. The one
 exception, added after this brief was first written: anonymous, aggregate usage events
@@ -93,8 +93,9 @@ indicator dots (4), then a full-width primary button. Page content is centered: 
 in a circle, a headline, then 1-2 sentences of body text.
 
 1. **Welcome** — icon: do-not-disturb circle. Headline "Welcome to Masjid Call Block". Body:
-   "Silence your phone for waaz or majlis without going completely dark. Masjid Call Block
-   keeps everyone else quiet while the family you choose can still reach you."
+   "Visiting the masjid with family or friends? Silence your phone without going completely
+   dark. Masjid Call Block keeps everyone else quiet while the people you choose can still
+   reach you."
 2. **Widget install** (the most important page — primary goal of onboarding) — icon: widgets.
    Headline "Add the Home screen widget". Body: "This is the fastest way to use Masjid Call
    Block — tap it on your way into masjid, tap it again on your way out. It turns red when
