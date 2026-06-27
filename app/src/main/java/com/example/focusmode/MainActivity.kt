@@ -36,7 +36,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.NotificationManagerCompat
-import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import androidx.core.content.ContextCompat
@@ -470,10 +469,7 @@ private data class GroupedBlock(val latest: BlockedEvent, val count: Int)
 fun LogTab(log: List<BlockedEvent>, deviceContacts: List<Contact>, onClear: () -> Unit) {
     val fmt = remember { SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()) }
     val context = LocalContext.current
-
-    // Preloaded here (not at app start) so it's only ever fetched while the user is actually on
-    // the one screen that can show it — see Ads.kt for why this is a no-op unless ads_enabled.
-    LaunchedEffect(Unit) { Ads.preloadInterstitial(context) }
+    val adsEnabled by Ads.enabledFlow.collectAsState()
 
     Column(Modifier.fillMaxSize()) {
     if (log.isEmpty()) {
@@ -504,9 +500,7 @@ fun LogTab(log: List<BlockedEvent>, deviceContacts: List<Contact>, onClear: () -
             ) {
                 Text("${grouped.size} contacts • ${log.size} blocked",
                     style = MaterialTheme.typography.titleSmall)
-                TextButton(onClick = {
-                    Ads.showInterstitialThen(context as Activity, onClear)
-                }) { Text("Clear All") }
+                TextButton(onClick = onClear) { Text("Clear All") }
             }
             LazyColumn(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
@@ -569,7 +563,7 @@ fun LogTab(log: List<BlockedEvent>, deviceContacts: List<Contact>, onClear: () -
             }
         }
     }
-    if (Ads.isEnabled()) {
+    if (adsEnabled) {
         BannerAdView(modifier = Modifier.fillMaxWidth())
     }
     }
@@ -583,7 +577,7 @@ fun BannerAdView(modifier: Modifier = Modifier) {
             AdView(context).apply {
                 setAdSize(AdSize.BANNER)
                 adUnitId = Ads.bannerUnitId()
-                loadAd(AdRequest.Builder().build())
+                loadAd(Ads.buildBannerRequest())
             }
         }
     )
