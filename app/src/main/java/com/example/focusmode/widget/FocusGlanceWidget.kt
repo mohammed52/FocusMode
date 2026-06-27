@@ -58,11 +58,11 @@ class FocusGlanceWidget : GlanceAppWidget() {
 
 @Composable
 private fun WidgetContent(enabled: Boolean) {
-    // ON: deep maroon — bold red reads as active/alert; gold arch and ivory text for contrast.
-    // OFF: gold — warm and visible without being harsh; maroon arch and text for contrast.
-    val backgroundColor = if (enabled) BohraMaroon else BohraGold
+    // ON: gold — warm premium feel; maroon arch and text for contrast.
+    // OFF: maroon — recedes to a calm dark state; gold arch and ivory text for contrast.
+    val backgroundColor = if (enabled) BohraGold else BohraMaroon
     val archRes = if (enabled) R.drawable.ic_widget_arch_on else R.drawable.ic_widget_arch
-    val textColor = if (enabled) BohraIvory else BohraMaroon
+    val textColor = if (enabled) BohraMaroon else BohraIvory
     Row(
         modifier = GlanceModifier
             .fillMaxSize()
