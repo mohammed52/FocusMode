@@ -57,7 +57,7 @@ fun buildPermissionSteps(
     PermissionStep(
         icon = Icons.Default.Contacts,
         title = "Allow access to Contacts",
-        description = "So Masjid Call Block can recognise your family and let them through.",
+        description = "So Masjid Call Block can recognise your family and friends and let them through.",
         hint = "Tap \"Allow\" on the prompt that appears.",
         buttonLabel = "Allow Contacts Access",
         granted = hasContacts,
@@ -85,7 +85,7 @@ fun buildPermissionSteps(
     PermissionStep(
         icon = Icons.Default.DoNotDisturbOn,
         title = "Allow Do Not Disturb access",
-        description = "This silences sounds the instant Masjid Call Block turns on.",
+        description = "This lets the app silence all sounds when you turn it on, so nothing rings or buzzes while you're inside.",
         hint = "Find \"Masjid Call Block\" in the list and allow it, then come back here.",
         buttonLabel = "Open Do Not Disturb Settings",
         granted = hasDnd,
@@ -224,7 +224,7 @@ private fun AllSetStep(onDone: () -> Unit) {
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            "Masjid Call Block is ready. Turn it on before you head in, and your family can still reach you.",
+            "Masjid Call Block is ready. Turn it on before you head in to the masjid — and when the session ends, your family and friends can still reach you to coordinate.",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant

@@ -265,7 +265,7 @@ fun FocusApp(openLogTabTrigger: Int = 0, pendingCallBackKey: String? = null) {
                         )
                         Text(
                             text = if (isEnabled)
-                                "Blocking all notifications & calls"
+                                "Only your allowed contacts can reach you"
                             else
                                 "Tap to activate",
                             style = MaterialTheme.typography.bodyMedium,

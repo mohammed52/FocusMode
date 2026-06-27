@@ -136,9 +136,9 @@ private fun OnboardingPageScaffold(
 private fun WelcomePage() {
     OnboardingPageScaffold(icon = Icons.Default.DoNotDisturbOn, title = "Welcome to Masjid Call Block") {
         Text(
-            "Visiting the masjid with family or friends? Silence your phone without going " +
-                "completely dark. Masjid Call Block keeps everyone else quiet while the people " +
-                "you choose can still reach you.",
+            "At the masjid with family or friends? Silence your phone so you don't disturb " +
+                "anyone — without cutting off the people who matter. When it's time to leave, " +
+                "they can still reach you.",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -150,8 +150,8 @@ private fun WelcomePage() {
 private fun PermissionsIntroPage() {
     OnboardingPageScaffold(icon = Icons.Default.Security, title = "One last thing") {
         Text(
-            "Masjid Call Block needs four permissions to work — contacts, notifications, calls, " +
-                "and Do Not Disturb. Tap \"Get Started\" and we'll take you through each one.",
+            "Masjid Call Block needs four permissions to work — contacts, notifications, " +
+                "call screening, and Do Not Disturb. Tap \"Get Started\" and we'll take you through each one.",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
