@@ -6,9 +6,13 @@ import com.google.android.gms.ads.MobileAds
 import com.google.firebase.Firebase
 import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 // Banner ad visibility is driven by a Remote Config flag fetched on every launch.
 // The StateFlow starts false so no ad shows before the fetch completes — this prevents
@@ -24,18 +28,22 @@ object Ads {
     val enabledFlow: StateFlow<Boolean> = _enabled.asStateFlow()
 
     fun init(context: Context) {
-        val rc = Firebase.remoteConfig
-        // Chain: apply interval setting first, then fetch — so the interval is in effect
-        // before fetchAndActivate runs (firing both in parallel ignores the new interval).
-        rc.setConfigSettingsAsync(remoteConfigSettings {
-            minimumFetchIntervalInSeconds = if (BuildConfig.DEBUG) 0L else 3600L
-        }).addOnSuccessListener {
-            rc.setDefaultsAsync(mapOf(ADS_ENABLED_KEY to true, BANNER_UNIT_KEY to TEST_BANNER_UNIT_ID))
-            rc.fetchAndActivate().addOnCompleteListener {
+        MobileAds.initialize(context)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val rc = Firebase.remoteConfig
+                rc.setConfigSettingsAsync(remoteConfigSettings {
+                    minimumFetchIntervalInSeconds = if (BuildConfig.DEBUG) 0L else 3600L
+                }).await()
+                rc.setDefaultsAsync(
+                    mapOf(ADS_ENABLED_KEY to false, BANNER_UNIT_KEY to TEST_BANNER_UNIT_ID)
+                ).await()
+                rc.fetchAndActivate().await()
                 _enabled.value = rc.getBoolean(ADS_ENABLED_KEY)
+            } catch (_: Exception) {
+                // fetch failed — ads stay off
             }
         }
-        MobileAds.initialize(context)
     }
 
     fun bannerUnitId(): String =
